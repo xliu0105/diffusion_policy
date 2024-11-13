@@ -32,7 +32,7 @@ from diffusion_policy.model.common.lr_scheduler import get_scheduler
 OmegaConf.register_new_resolver("eval", eval, replace=True)
 
 class TrainDiffusionUnetHybridWorkspace(BaseWorkspace):
-    include_keys = ['global_step', 'epoch']
+    include_keys = ['global_step', 'epoch']  # 指定哪些是在checkpoint中要额外保存的键
 
     def __init__(self, cfg: OmegaConf, output_dir=None):
         super().__init__(cfg, output_dir=output_dir)
@@ -50,7 +50,7 @@ class TrainDiffusionUnetHybridWorkspace(BaseWorkspace):
         if cfg.training.use_ema:
             self.ema_model = copy.deepcopy(self.model)
 
-        # configure training state
+        # configure training state，设置优化器
         self.optimizer = hydra.utils.instantiate(
             cfg.optimizer, params=self.model.parameters())
 
@@ -254,9 +254,11 @@ class TrainDiffusionUnetHybridWorkspace(BaseWorkspace):
                         del mse
                 
                 # checkpoint
+                # 到达检查点会保存一次模型，同时由于这个判断方法，在训练的刚开始也会保存一次模型
                 if (self.epoch % cfg.training.checkpoint_every) == 0:
                     # checkpointing
                     if cfg.checkpoint.save_last_ckpt:
+                        # 每一次保存会将所有的参数保存到一个ckpt文件中，包括模型参数，优化器参数等包含static_dict方法的参数，同时还会保存global_step和epoch，以及cfg配置文件
                         self.save_checkpoint()
                     if cfg.checkpoint.save_last_snapshot:
                         self.save_snapshot()

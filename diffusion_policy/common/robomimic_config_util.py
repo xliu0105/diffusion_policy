@@ -7,6 +7,11 @@ from robomimic.scripts.generate_paper_configs import (
     modify_config_for_dataset,
 )
 
+"""
+    用于生成 robomimic 库中的特定算法和数据集配置。这个函数根据用户提供的参数，动态生成训练所需的配置，并对配置进行相应的修改，
+    使其适应特定的观察模式（如低维度数据或图像数据）以及数据集类型
+"""
+
 def get_robomimic_config(
         algo_name='bc_rnn', 
         hdf5_type='low_dim', 
@@ -43,5 +48,3 @@ def get_robomimic_config(
         hdf5_type=hdf5_type,
     )
     return config
-    
-

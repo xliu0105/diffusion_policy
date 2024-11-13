@@ -45,7 +45,7 @@ class LinearNormalizer(DictOfTensorMixin):
     def __call__(self, x: Union[Dict, torch.Tensor, np.ndarray]) -> torch.Tensor:
         return self.normalize(x)
     
-    def __getitem__(self, key: str):
+    def __getitem__(self, key: str):  # 魔法方法，可以实现类似字典的取值操作
         return SingleFieldLinearNormalizer(self.params_dict[key])
 
     def __setitem__(self, key: str , value: 'SingleFieldLinearNormalizer'):

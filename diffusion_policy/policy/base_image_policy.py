@@ -4,7 +4,7 @@ import torch.nn as nn
 from diffusion_policy.model.common.module_attr_mixin import ModuleAttrMixin
 from diffusion_policy.model.common.normalizer import LinearNormalizer
 
-class BaseImagePolicy(ModuleAttrMixin):
+class BaseImagePolicy(ModuleAttrMixin):  # 最底层的ModuleAttrMixin类继承自nn.Module
     # init accepts keyword argument shape_meta, see config/task/*_image.yaml
 
     def predict_action(self, obs_dict: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:

@@ -18,6 +18,7 @@ import wandb
 import json
 from diffusion_policy.workspace.base_workspace import BaseWorkspace
 
+# click库是一个用于创建命令行的Python包，它是一个用于快速创建命令行的工具，可以通过装饰器的方式来定义命令行接口
 @click.command()
 @click.option('-c', '--checkpoint', required=True)
 @click.option('-o', '--output_dir', required=True)
@@ -31,7 +32,7 @@ def main(checkpoint, output_dir, device):
     payload = torch.load(open(checkpoint, 'rb'), pickle_module=dill)
     cfg = payload['cfg']
     cls = hydra.utils.get_class(cfg._target_)
-    workspace = cls(cfg, output_dir=output_dir)
+    workspace = cls(cfg, output_dir=output_dir)  # 加载整个workspace
     workspace: BaseWorkspace
     workspace.load_payload(payload, exclude_keys=None, include_keys=None)
     

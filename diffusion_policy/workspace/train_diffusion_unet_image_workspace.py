@@ -46,6 +46,7 @@ class TrainDiffusionUnetImageWorkspace(BaseWorkspace):
         # configure model
         self.model: DiffusionUnetImagePolicy = hydra.utils.instantiate(cfg.policy)
 
+        # EMA是指数移动平均，即有两个模型，一个是原模型，一个是EMA模型，EMA模型的参数是原模型参数的移动平均值
         self.ema_model: DiffusionUnetImagePolicy = None
         if cfg.training.use_ema:
             self.ema_model = copy.deepcopy(self.model)
@@ -58,10 +59,11 @@ class TrainDiffusionUnetImageWorkspace(BaseWorkspace):
         self.global_step = 0
         self.epoch = 0
 
-    def run(self):
+    def run(self):  # 训练主函数
         cfg = copy.deepcopy(self.cfg)
 
         # resume training
+        # 是否要resume训练?
         if cfg.training.resume:
             lastest_ckpt_path = self.get_checkpoint_path()
             if lastest_ckpt_path.is_file():
@@ -69,17 +71,18 @@ class TrainDiffusionUnetImageWorkspace(BaseWorkspace):
                 self.load_checkpoint(path=lastest_ckpt_path)
 
         # configure dataset
+        # 训练数据使用的Zarr格式
         dataset: BaseImageDataset
-        dataset = hydra.utils.instantiate(cfg.task.dataset)
+        dataset = hydra.utils.instantiate(cfg.task.dataset)  # hydra.utils.instantiate是通过配置文件实例化对象的方法
         assert isinstance(dataset, BaseImageDataset)
-        train_dataloader = DataLoader(dataset, **cfg.dataloader)
+        train_dataloader = DataLoader(dataset, **cfg.dataloader)  # **cfg.dataloader是将cfg.dataloader中的所有键值对传给DataLoader
         normalizer = dataset.get_normalizer()
 
-        # configure validation dataset
+        # configure validation dataset，验证数据集
         val_dataset = dataset.get_validation_dataset()
         val_dataloader = DataLoader(val_dataset, **cfg.val_dataloader)
 
-        self.model.set_normalizer(normalizer)
+        self.model.set_normalizer(normalizer)  # 设置model中的normalizer
         if cfg.training.use_ema:
             self.ema_model.set_normalizer(normalizer)
 
@@ -158,6 +161,7 @@ class TrainDiffusionUnetImageWorkspace(BaseWorkspace):
                     self.model.obs_encoder.requires_grad_(False)
 
                 train_losses = list()
+                # tqdm创建进度条，tqdm会根据dataloader中的批次迭代显式当前epoch中的进度，参数leave=False表示进度条结束后不保留，参数mininterval表示进度条的最小更新间隔
                 with tqdm.tqdm(train_dataloader, desc=f"Training epoch {self.epoch}", 
                         leave=False, mininterval=cfg.training.tqdm_interval_sec) as tepoch:
                     for batch_idx, batch in enumerate(tepoch):
@@ -167,6 +171,8 @@ class TrainDiffusionUnetImageWorkspace(BaseWorkspace):
                             train_sampling_batch = batch
 
                         # compute loss
+                        # cfg.training.gradient_accumulate_every的作用：梯度累积，即每隔cfg.training.gradient_accumulate_every个batch更新一次梯度
+                        # 每隔gradient_accumulate_every次更新一次梯度，因此需要将前面所有的梯度都累计起来，因此需要缩放倍数
                         raw_loss = self.model.compute_loss(batch)
                         loss = raw_loss / cfg.training.gradient_accumulate_every
                         loss.backward()
@@ -212,7 +218,7 @@ class TrainDiffusionUnetImageWorkspace(BaseWorkspace):
                 policy = self.model
                 if cfg.training.use_ema:
                     policy = self.ema_model
-                policy.eval()
+                policy.eval()  # 将模型设置为评估模式，即不计算梯度
 
                 # run rollout
                 if (self.epoch % cfg.training.rollout_every) == 0:
@@ -265,6 +271,7 @@ class TrainDiffusionUnetImageWorkspace(BaseWorkspace):
                     if cfg.checkpoint.save_last_snapshot:
                         self.save_snapshot()
 
+                    # 后面这一部分是为了用来保存训练到目前为止，前k个最好的模型
                     # sanitize metric names
                     metric_dict = dict()
                     for key, value in step_log.items():
@@ -279,7 +286,7 @@ class TrainDiffusionUnetImageWorkspace(BaseWorkspace):
                     if topk_ckpt_path is not None:
                         self.save_checkpoint(path=topk_ckpt_path)
                 # ========= eval end for this epoch ==========
-                policy.train()
+                policy.train()  # 将模型设置为训练模式
 
                 # end of epoch
                 # log of last step is combined with validation and rollout
