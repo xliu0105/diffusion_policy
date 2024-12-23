@@ -1,4 +1,6 @@
+# _target_是设置训练这个policy使用什么workspace，最好为自定义的任务也设置一个新的workspace
 _target_: diffusion_policy.workspace.train_diffusion_unet_hybrid_workspace.TrainDiffusionUnetHybridWorkspace
+# 设置保存checkpoint的参数，每隔几个epoch会保存一次checkpoint，保存为ckpt文件
 checkpoint:
   save_last_ckpt: true
   save_last_snapshot: false
@@ -7,6 +9,7 @@ checkpoint:
     k: 5
     mode: max
     monitor_key: test_mean_score
+# 设置dataloader参数
 dataloader:
   batch_size: 64
   num_workers: 8
@@ -14,6 +17,8 @@ dataloader:
   pin_memory: true
   shuffle: true
 dataset_obs_steps: 2
+# EMA是指数移动平均，在这里，EMA的衰减因子是基于inv_gamma, max_value, min_value, power, t(迭代次数)来计算的
+# 关于diffusion policy使用EMA，可以参考代码文件：diffusion_policy/model/diffusion/ema_model.py，是用来对模型权重进行平滑的
 ema:
   _target_: diffusion_policy.model.diffusion.ema_model.EMAModel
   inv_gamma: 1.0
@@ -38,8 +43,10 @@ logging:
 multi_run:
   run_dir: data/outputs/2023.01.16/20.20.06_train_diffusion_unet_hybrid_pusht_image
   wandb_name_base: 2023.01.16-20.20.06_train_diffusion_unet_hybrid_pusht_image
+# 从policy输出的horizon中选择执行的步数
 n_action_steps: 8
 n_latency_steps: 0
+# 输入给policy的obs的步数
 n_obs_steps: 2
 name: train_diffusion_unet_hybrid
 obs_as_global_cond: true
@@ -52,6 +59,7 @@ optimizer:
   lr: 0.0001
   weight_decay: 1.0e-06
 past_action_visible: false
+# 设置和policy的一些详细参数，当然和任务也有一些关联
 policy:
   _target_: diffusion_policy.policy.diffusion_unet_hybrid_image_policy.DiffusionUnetHybridImagePolicy
   cond_predict_scale: true
@@ -111,7 +119,9 @@ shape_meta:
       - 96
       - 96
       type: rgb
+# 有关这个被训练的task的一些详细参数
 task:
+  # 设置dataset是哪个，同时设置zarr文件的路径
   dataset:
     _target_: diffusion_policy.dataset.pusht_image_dataset.PushTImageDataset
     horizon: 16
@@ -121,6 +131,7 @@ task:
     seed: 42
     val_ratio: 0.02
     zarr_path: data/pusht/pusht_cchi_v7_replay.zarr
+  # TODO: 暂时还不知道env_runner是干什么的
   env_runner:
     _target_: diffusion_policy.env_runner.pusht_image_runner.PushTImageRunner
     fps: 10
@@ -157,7 +168,9 @@ task:
         - 96
         type: rgb
 task_name: pusht_image
+# 有关training的一些详细参数
 training:
+  # 每隔多少个epoch保存一次checkpoint
   checkpoint_every: 50
   debug: false
   device: cuda:0

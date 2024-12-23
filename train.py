@@ -39,6 +39,7 @@ def main(cfg: OmegaConf):
     OmegaConf.resolve(cfg)  # 解析配置文件，在配置文件中可能会使用${}语法来引用其他配置项或环境变量，如created_at: ${now:%Y-%m-%d}来获取当前时间，这里就是解析这些语法
 
     cls = hydra.utils.get_class(cfg._target_)  # 将cfg._target_指定的类名字的字符串转换为可以调用的类名字，并赋值给cls，之后可以直接用cls创建对象
+    # 创建workspace对象
     workspace: BaseWorkspace = cls(cfg)  # 根据上一行cfg._target_指定的类名创建一个对象，传入参数cfg
     workspace.run()  # 调用对象的run方法，开始运行
 

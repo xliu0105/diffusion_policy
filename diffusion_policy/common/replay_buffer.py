@@ -92,6 +92,7 @@ class ReplayBuffer:
         """
         Dummy constructor. Use copy_from* and create_from* class methods instead.
         """
+        # 注意，创建ReplayBuffer时，会检查zarr文件中是否有data和meta两个group，同时检查meta中是否有episode_ends字段
         assert('data' in root)
         assert('meta' in root)
         assert('episode_ends' in root['meta'])
@@ -402,6 +403,7 @@ class ReplayBuffer:
             return super().__repr__()
 
     def keys(self):
+        # zarr的组支持.keys()方法，会返回组中所有的子组和dataset的名称
         return self.data.keys()
     
     def values(self):

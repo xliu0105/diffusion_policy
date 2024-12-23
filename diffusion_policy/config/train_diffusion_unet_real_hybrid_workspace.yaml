@@ -1,8 +1,12 @@
+#  defaults字段是Hydra配置框架中，用于模块化组合配置文件的一种方式，允许从其他yaml文件中继承或引用配置。
+#  _self_表示需要使用当前文件中的配置，如果没有_self_，本文件中的所有配置都会被忽略。
+#  task: real_pusht_image表示从当前目录下的task目录下读取real_pusht_image.yaml文件，并整合到当前配置文件中。同时可以通过如${task.XXX}的方式引用task文件中的配置。
 defaults:
   - _self_
   - task: real_pusht_image
 
 name: train_diffusion_unet_hybrid
+# _target_是设置训练这个policy使用什么workspace，最好为自定义的任务也设置一个新的workspace
 _target_: diffusion_policy.workspace.train_diffusion_unet_hybrid_workspace.TrainDiffusionUnetHybridWorkspace
 
 task_name: ${task.name}
@@ -10,7 +14,9 @@ shape_meta: ${task.shape_meta}
 exp_name: "default"
 
 horizon: 16
+# 输入给policy的obs的步数
 n_obs_steps: 2
+# 从policy输出的horizon中选择执行的步数
 n_action_steps: 8
 n_latency_steps: 0
 dataset_obs_steps: ${n_obs_steps}
@@ -55,6 +61,8 @@ policy:
   # scheduler.step params
   # predict_epsilon: True
 
+# EMA是指数移动平均，在这里，EMA的衰减因子是基于inv_gamma, max_value, min_value, power, t(迭代次数)来计算的
+# 关于diffusion policy使用EMA，可以参考代码文件：diffusion_policy/model/diffusion/ema_model.py，是用来对模型权重进行平滑的
 ema:
   _target_: diffusion_policy.model.diffusion.ema_model.EMAModel
   update_after_step: 0
@@ -100,6 +108,7 @@ training:
   # training loop control
   # in epochs
   rollout_every: 50
+  # 每隔多少个epoch保存一次checkpoint
   checkpoint_every: 50
   val_every: 1
   sample_every: 5
